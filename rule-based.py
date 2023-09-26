@@ -302,23 +302,44 @@ def make_action(screen, info, step, env, prev_action):
 
 
 def jump_pipe(mario_location, pipe_location):
-    distance = abs(mario_location[0] - pipe_location[0])
+    distance = pipe_location[0] - mario_location[0]
     action = 3
 
-    if distance <= 45:
-        action = 2
+    if distance > 0:
+        if is_on_pipe(mario_location, pipe_location):
+            action = 2
+
+        elif distance <= 60:
+            action = 2
+
+            if distance <= 20:
+                action = 6
+
+                if distance >= 15:
+                    for i in range(40):
+                        action = 4
 
     return action
 
 
 def jump_enemy(mario_location, enemy_location):
-    distance = abs(mario_location[0] - enemy_location[0])
+    distance = enemy_location[0] - mario_location[0]
     action = 3
 
-    if distance <= 40:
-        action = 2
+    if distance > 0:
+        if distance <= 40:
+            action = 2
+
+            if distance <= 20:
+                action = 6
 
     return action
+
+def is_on_pipe(mario_location, pipe_location):
+    mario_y = mario_location[1]
+    pipe_y = pipe_location[1]
+
+    return mario_y < pipe_y
 
 
 # env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
