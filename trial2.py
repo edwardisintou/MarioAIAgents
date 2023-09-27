@@ -39,22 +39,16 @@ image_files = {
         "pipe": ["Images/pipe_upper_section.png", "Images/pipe_lower_section.png"],
     },
     "block": {
-        "block": ["Images/block2.png"],
-        "hole": ["Images/hole.jpeg"],
-        # "block": ["Images/block1.png", "Images/block2.png", "Images/block3.png", "Images/block4.png"],
-        # "question_block": ["Images/questionA.png", "Images/questionB.png", "Images/questionC.png"],
-        # "hole": ["Images/new_hole.png"],
-        # "hole4": ["Images/hole4.png"],
-        # "hole_resize": ["Images/hole5.png"],
+        "block": ["Images/block1.png", "Images/block2.png", "Images/block3.png", "Images/block4.png"],
+        "question_block": ["Images/questionA.png", "Images/questionB.png", "Images/questionC.png"],
     },
     "hole": {
-        "hole": ["Images/hole.jpeg"],
+        "hole": ["Images/hole.jpeg", "Images/hole2.jpeg"],
     },
     "item": {
         "mushroom": ["Images/mushroom_red.png"],
     },
 }
-
 
 def _get_template(filename):
     image = cv.imread(filename)
@@ -67,13 +61,11 @@ def _get_template(filename):
     dimensions = tuple(template.shape[::-1])
     return template, mask, dimensions
 
-
 def get_template(filenames):
     results = []
     for filename in filenames:
         results.append(_get_template(filename))
     return results
-
 
 def get_template_and_flipped(filenames):
     results = []
@@ -82,7 +74,6 @@ def get_template_and_flipped(filenames):
         results.append((template, mask, dimensions))
         results.append((cv.flip(template, 1), cv.flip(mask, 1), dimensions))
     return results
-
 
 include_flipped = {"mario", "enemy"}
 
@@ -108,7 +99,6 @@ colour_map = {
 unused_letters = sorted(set(string.ascii_uppercase) - set(colour_map.values()), reverse=True)
 DEFAULT_LETTER = "?"
 
-
 def _get_colour(colour):
     colour = tuple(colour)
     if colour in colour_map:
@@ -120,7 +110,6 @@ def _get_colour(colour):
         return letter
     else:
         return DEFAULT_LETTER
-
 
 def print_grid(obs, object_locations):
     pixels = {}
@@ -147,7 +136,6 @@ def print_grid(obs, object_locations):
                 colour = _get_colour(obs[y][x])
             line.append(colour)
 
-
 def _locate_object(screen, templates, stop_early=False, threshold=MATCH_THRESHOLD):
     locations = {}
     for template, mask, dimensions in templates:
@@ -160,7 +148,6 @@ def _locate_object(screen, templates, stop_early=False, threshold=MATCH_THRESHOL
             break
 
     return [(loc, locations[loc]) for loc in locations]
-
 
 def _locate_pipe(screen, threshold=MATCH_THRESHOLD):
     upper_template, upper_mask, upper_dimensions = templates["pipe"]["pipe"][0]
@@ -184,7 +171,6 @@ def _locate_pipe(screen, threshold=MATCH_THRESHOLD):
                 locations.append(((x, y), (upper_width, h), "pipe"))
                 break
     return locations
-
 
 def locate_objects(screen, mario_status):
     screen = cv.cvtColor(screen, cv.COLOR_BGR2GRAY)
@@ -213,7 +199,6 @@ def locate_objects(screen, mario_status):
 
     return object_locations
 
-
 def find_mario_location(screen, info, step, env, prev_action):
     mario_status = info["status"]
     object_locations = locate_objects(screen, mario_status)
@@ -225,6 +210,30 @@ def find_mario_location(screen, info, step, env, prev_action):
 
     return mario_position
 
+def detect_hole(screen):
+    obs = cv.cvtColor(screen, cv.COLOR_BGR2RGB)
+    cv.imwrite("Images/screen.jpeg", obs)
+    obs = cv.imread("Images/screen.jpeg", cv.IMREAD_COLOR)
+    hole = cv.imread("Images/hole2.jpeg", cv.IMREAD_COLOR)
+
+    result = cv.matchTemplate(obs, hole, cv.TM_CCOEFF_NORMED)
+
+    w = hole.shape[1]
+    h = hole.shape[0]
+
+    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+    yloc, xloc = np.where(result >= 0.8)
+    # print("x:", xloc, "y:", yloc)
+
+    rectangles = []
+    for (x, y) in zip(xloc, yloc):
+        rectangles.append([int(x), int(y), int(w), int(h)])
+        rectangles.append([int(x), int(y), int(w), int(h)])
+
+    rectangles, weights = cv.groupRectangles(rectangles, 1, 0.2)
+
+    # print("rectangles:", rectangles)
+    return rectangles
 
 def find_object_location(screen, info, step, env, prev_action):
     mario_status = info["status"]
@@ -245,35 +254,13 @@ def find_object_location(screen, info, step, env, prev_action):
     if len(pipe_locations) > 0:
         pipe_position = pipe_locations[0][0]
 
-    hole_locations = object_locations["hole"]
+    hole_locations = detect_hole(screen)
     hole_position = None
     if len(hole_locations) > 0:
-        hole_position = hole_locations[0][0]
+        hole_position_x = hole_locations[-1][0]
+        hole_position_y = hole_locations[-1][1]
+        hole_position = (hole_position_x, hole_position_y)
         print("hole:", hole_position)
-
-    # block_set = set()
-    # block_locations = object_locations["block"]
-    # hole_position = None
-    # if len(block_locations) > 0:
-    #     for block in block_locations:
-    #        # print("block:", block)
-    #         block_position_x = block[0][0]
-    #         # print("block_x:", block_position_x)
-    #         block_set.add(block_position_x)
-
-    #     block_before_hole = block_locations[0][0]
-    #     next_block_x = block_before_hole[0] + 16
-    #     # print("current block:", block_before_hole[0])
-    #     # print("next_block: ", next_block_x)
-        
-    #     if next_block_x not in block_set:
-    #         hole_position = block_before_hole
-    #         print("block 2: ", hole_position)
-
-    # hole_locations = object_locations["hole"]
-    # hole_position = None
-    # if len(hole_locations) > 0:
-    #     hole_position = hole_locations[0][0]
 
     next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position)
 
@@ -313,15 +300,6 @@ def find_min_location(locations):
 
     return min_location
 
-
-# def make_action(screen, info, step, env, prev_action):
-#     mario = find_mario_location(screen, info, step, env, prev_action)
-#     object = find_object_location(screen, info, step, env, prev_action)
-
-#     if object is not None:
-#         return [object[0], object[1]]
-
-
 def make_action(screen, info, step, env, prev_action):
     mario = find_mario_location(screen, info, step, env, prev_action)
     object = find_object_location(screen, info, step, env, prev_action)
@@ -332,13 +310,13 @@ def make_action(screen, info, step, env, prev_action):
         action = 3
     elif object[0].lower() == "pipe":
         action = jump_pipe(mario, object[1])
-        # print(abs(mario[0] - object[1][0]))
+        print(abs(mario[0] - object[1][0]))
     elif object[0].lower() == "enemy":
         action = jump_enemy(mario, object[1])
-        # print(abs(mario[0] - object[1][0]))
-    # elif object[0].lower() == "hole":
-    #     action = jump_enemy(mario, object[1])
-    #     print(abs(mario[0] - object[1][0]))
+        print(abs(mario[0] - object[1][0]))
+    elif object[0].lower() == "hole":
+        action = jump_hole(mario, object[1])
+        print(abs(mario[0] - object[1][0]))
 
     print("action:", action)
     print("mario:", mario)
@@ -371,7 +349,7 @@ def jump_enemy(mario_location, enemy_location):
     distance = enemy_location[0] - mario_location[0]
     action = 3
 
-    if distance > 0:
+    if distance > 0 and not is_below_enemy(mario_location, enemy_location):
         if distance <= 40:
             action = 2
 
@@ -380,11 +358,21 @@ def jump_enemy(mario_location, enemy_location):
 
     return action
 
-def is_on_pipe(mario_location, pipe_location):
-    mario_y = mario_location[1]
-    pipe_y = pipe_location[1]
+def jump_hole(mario_location, hole_location):
+    distance = hole_location[0] - mario_location[0]
+    action = 3
 
-    return mario_y < pipe_y
+    if distance > 0:
+        if distance <= 40:
+            action = 2
+
+    return action
+
+def is_on_pipe(mario_location, pipe_location):
+    mario_location[1] > pipe_location[1]
+
+def is_below_enemy(mario_location, enemy_location):
+    return mario_location[1] > enemy_location[1]
 
 
 # env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
