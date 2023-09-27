@@ -285,8 +285,8 @@ def make_action(screen, info, step, env, prev_action):
     mario_status = info["status"]
     # print(mario_status)
     object_locations = locate_objects(screen, mario_status)
-    # print(object_locations)
-    # print('\n')
+    print(object_locations)
+    print('\n')
 
     # You probably don't want to print everything I am printing when you run
     # your code, because printing slows things down, and it puts a LOT of
