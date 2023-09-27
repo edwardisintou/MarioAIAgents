@@ -39,16 +39,17 @@ image_files = {
         "pipe": ["Images/pipe_upper_section.png", "Images/pipe_lower_section.png"],
     },
     "block": {
-        "block": ["Images/block2.png"]
+        "block": ["Images/block2.png"],
+        "hole": ["Images/hole.jpeg"],
         # "block": ["Images/block1.png", "Images/block2.png", "Images/block3.png", "Images/block4.png"],
         # "question_block": ["Images/questionA.png", "Images/questionB.png", "Images/questionC.png"],
         # "hole": ["Images/new_hole.png"],
         # "hole4": ["Images/hole4.png"],
         # "hole_resize": ["Images/hole5.png"],
     },
-    # "hole": {
-    #     "hole": ["Images/hole.png"]
-    # },
+    "hole": {
+        "hole": ["Images/hole.jpeg"],
+    },
     "item": {
         "mushroom": ["Images/mushroom_red.png"],
     },
@@ -244,53 +245,53 @@ def find_object_location(screen, info, step, env, prev_action):
     if len(pipe_locations) > 0:
         pipe_position = pipe_locations[0][0]
 
-    # block_locations = object_locations["block"]
-    # block_position = None
-    # if len(block_locations) > 0:
-    #     block_position = block_locations[0][0]
-    #     print("block 1:", block_position)
-
-    block_set = set()
-    block_locations = object_locations["block"]
+    hole_locations = object_locations["hole"]
     hole_position = None
-    if len(block_locations) > 0:
-        for block in block_locations:
-           # print("block:", block)
-            block_position_x = block[0][0]
-            # print("block_x:", block_position_x)
-            block_set.add(block_position_x)
+    if len(hole_locations) > 0:
+        hole_position = hole_locations[0][0]
+        print("hole:", hole_position)
 
-        block_before_hole = block_locations[0][0]
-        next_block_x = block_before_hole[0] + 16
-        # print("current block:", block_before_hole[0])
-        # print("next_block: ", next_block_x)
+    # block_set = set()
+    # block_locations = object_locations["block"]
+    # hole_position = None
+    # if len(block_locations) > 0:
+    #     for block in block_locations:
+    #        # print("block:", block)
+    #         block_position_x = block[0][0]
+    #         # print("block_x:", block_position_x)
+    #         block_set.add(block_position_x)
+
+    #     block_before_hole = block_locations[0][0]
+    #     next_block_x = block_before_hole[0] + 16
+    #     # print("current block:", block_before_hole[0])
+    #     # print("next_block: ", next_block_x)
         
-        if next_block_x not in block_set:
-            hole_position = block_before_hole
-            print("block 2: ", hole_position)
+    #     if next_block_x not in block_set:
+    #         hole_position = block_before_hole
+    #         print("block 2: ", hole_position)
 
     # hole_locations = object_locations["hole"]
     # hole_position = None
     # if len(hole_locations) > 0:
     #     hole_position = hole_locations[0][0]
 
-    next_object = nearest_object(mario_position, enemy_position, pipe_position)
+    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position)
 
     if enemy_position == next_object:
         return ["enemy", enemy_position]
     elif pipe_position == next_object:
         return ["pipe", pipe_position]
-    # elif hole_position == next_object:
-    #     return ["hole", hole_position]
+    elif hole_position == next_object:
+        return ["hole", hole_position]
     else:
         return None
 
 
-def nearest_object(mario_position, enemy_position, pipe_position):
+def nearest_object(mario_position, enemy_position, pipe_position, hole_position):
     objects = []
     locations = []
 
-    for object in enemy_position, pipe_position:
+    for object in enemy_position, pipe_position, hole_position:
         if object is not None:
             objects.append(object)
             location = object[0] - mario_position[0]
@@ -339,9 +340,9 @@ def make_action(screen, info, step, env, prev_action):
     #     action = jump_enemy(mario, object[1])
     #     print(abs(mario[0] - object[1][0]))
 
-    # print(action)
-    # print("mario:", mario)
-    # print("object:", object)
+    print("action:", action)
+    print("mario:", mario)
+    print("object:", object)
     return action
 
 
