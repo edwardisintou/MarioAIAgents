@@ -35,11 +35,19 @@ image_files = {
         "goomba": ["Images/goomba.png"],
         "koopa": ["Images/koopaA.png", "Images/koopaB.png"],
     },
-    "block": {
-        # "block": ["Images/block1.png", "Images/block2.png", "Images/block3.png", "Images/block4.png"],
-        # "question_block": ["Images/questionA.png", "Images/questionB.png", "Images/questionC.png"],
+    "pipe": {
         "pipe": ["Images/pipe_upper_section.png", "Images/pipe_lower_section.png"],
     },
+    "block": {
+        "block": ["Images/block1.png", "Images/block2.png", "Images/block3.png", "Images/block4.png"],
+        "question_block": ["Images/questionA.png", "Images/questionB.png", "Images/questionC.png"],
+        # "hole": ["Images/new_hole.png"],
+        # "hole4": ["Images/hole4.png"],
+        # "hole_resize": ["Images/hole5.png"],
+    },
+    # "hole": {
+    #     "hole": ["Images/hole.png"]
+    # },
     "item": {
         "mushroom": ["Images/mushroom_red.png"],
     },
@@ -153,8 +161,8 @@ def _locate_object(screen, templates, stop_early=False, threshold=MATCH_THRESHOL
 
 
 def _locate_pipe(screen, threshold=MATCH_THRESHOLD):
-    upper_template, upper_mask, upper_dimensions = templates["block"]["pipe"][0]
-    lower_template, lower_mask, lower_dimensions = templates["block"]["pipe"][1]
+    upper_template, upper_mask, upper_dimensions = templates["pipe"]["pipe"][0]
+    lower_template, lower_mask, lower_dimensions = templates["pipe"]["pipe"][1]
 
     upper_results = cv.matchTemplate(screen, upper_template, cv.TM_CCOEFF_NORMED, mask=upper_mask)
     upper_locs = list(zip(*np.where(upper_results >= threshold)))
@@ -199,7 +207,7 @@ def locate_objects(screen, mario_status):
 
         object_locations[category] = category_items
 
-    object_locations["block"] += _locate_pipe(screen)
+    object_locations["pipe"] += _locate_pipe(screen)
 
     return object_locations
 
@@ -230,26 +238,33 @@ def find_object_location(screen, info, step, env, prev_action):
     if len(enemy_locations) > 0:
         enemy_position = enemy_locations[0][0]
 
-    block_locations = object_locations["block"]
-    block_position = None
-    if len(block_locations) > 0:
-        block_position = block_locations[0][0]
+    pipe_locations = object_locations["pipe"]
+    pipe_position = None
+    if len(pipe_locations) > 0:
+        pipe_position = pipe_locations[0][0]
 
-    next_object = nearest_object(mario_position, enemy_position, block_position)
+    # hole_locations = object_locations["hole"]
+    # hole_position = None
+    # if len(hole_locations) > 0:
+    #     hole_position = hole_locations[0][0]
+
+    next_object = nearest_object(mario_position, enemy_position, pipe_position)
 
     if enemy_position == next_object:
         return ["enemy", enemy_position]
-    elif block_position == next_object:
-        return ["block", block_position]
+    elif pipe_position == next_object:
+        return ["pipe", pipe_position]
+    # elif hole_position == next_object:
+    #     return ["hole", hole_position]
     else:
         return None
 
 
-def nearest_object(mario_position, enemy_position, block_position):
+def nearest_object(mario_position, enemy_position, pipe_position):
     objects = []
     locations = []
 
-    for object in enemy_position, block_position:
+    for object in enemy_position, pipe_position:
         if object is not None:
             objects.append(object)
             location = object[0] - mario_position[0]
@@ -262,7 +277,7 @@ def nearest_object(mario_position, enemy_position, block_position):
 
 
 def find_min_location(locations):
-    min_location = locations[0]
+    min_location = max(locations)
 
     for location in locations:
         if location > 0:
@@ -288,12 +303,15 @@ def make_action(screen, info, step, env, prev_action):
 
     if object is None:
         action = 3
-    elif object[0].lower() == "block":
+    elif object[0].lower() == "pipe":
         action = jump_pipe(mario, object[1])
         print(abs(mario[0] - object[1][0]))
     elif object[0].lower() == "enemy":
         action = jump_enemy(mario, object[1])
         print(abs(mario[0] - object[1][0]))
+    # elif object[0].lower() == "hole":
+    #     action = jump_enemy(mario, object[1])
+    #     print(abs(mario[0] - object[1][0]))
 
     print(action)
     print("mario:", mario)
