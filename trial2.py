@@ -39,8 +39,8 @@ image_files = {
         "pipe": ["Images/pipe_upper_section.png", "Images/pipe_lower_section.png"],
     },
     "block": {
+        "block": ["Images/block2.png"]
         # "block": ["Images/block1.png", "Images/block2.png", "Images/block3.png", "Images/block4.png"],
-        "block": ["Images/block2.png"],
         # "question_block": ["Images/questionA.png", "Images/questionB.png", "Images/questionC.png"],
         # "hole": ["Images/new_hole.png"],
         # "hole4": ["Images/hole4.png"],
@@ -244,49 +244,53 @@ def find_object_location(screen, info, step, env, prev_action):
     if len(pipe_locations) > 0:
         pipe_position = pipe_locations[0][0]
 
+    # block_locations = object_locations["block"]
+    # block_position = None
+    # if len(block_locations) > 0:
+    #     block_position = block_locations[0][0]
+    #     print("block 1:", block_position)
+
     block_set = set()
     block_locations = object_locations["block"]
-    # print("block locations:", block_locations)
-    # print("len of blocks:", len(block_locations))
     hole_position = None
     if len(block_locations) > 0:
         for block in block_locations:
+           # print("block:", block)
             block_position_x = block[0][0]
+            # print("block_x:", block_position_x)
+            block_set.add(block_position_x)
 
-            if block_position_x > mario_position[0]:
-                block_set.add(block_position_x)
-
-        print("mario: ", mario_position[0])
-        print("current blocks:", block_set)
-
-        current_block = block_locations[0][0]
-        current_block_x = current_block[0]
-
-        if current_block_x > mario_position[0]:
-            next_block_x = current_block_x + 16
-            print("next_block_x", next_block_x)
+        block_before_hole = block_locations[0][0]
+        next_block_x = block_before_hole[0] + 16
+        # print("current block:", block_before_hole[0])
+        # print("next_block: ", next_block_x)
         
-            if next_block_x not in block_set:
-                hole_position = current_block
-                print("hole")
+        if next_block_x not in block_set:
+            hole_position = block_before_hole
+            print("block 2: ", hole_position)
 
-    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position)
+    # hole_locations = object_locations["hole"]
+    # hole_position = None
+    # if len(hole_locations) > 0:
+    #     hole_position = hole_locations[0][0]
+
+    next_object = nearest_object(mario_position, enemy_position, pipe_position)
 
     if enemy_position == next_object:
         return ["enemy", enemy_position]
     elif pipe_position == next_object:
         return ["pipe", pipe_position]
-    elif hole_position == next_object:
-        return ["hole", hole_position]
+    # elif hole_position == next_object:
+    #     return ["hole", hole_position]
     else:
         return None
 
 
-def nearest_object(mario_position, enemy_position, pipe_position, hole_position):
+def nearest_object(mario_position, enemy_position, pipe_position):
     objects = []
     locations = []
 
-    for object in enemy_position, pipe_position, hole_position:
+    for object in enemy_position, pipe_position:
         if object is not None:
             objects.append(object)
             location = object[0] - mario_position[0]
@@ -308,6 +312,15 @@ def find_min_location(locations):
 
     return min_location
 
+
+# def make_action(screen, info, step, env, prev_action):
+#     mario = find_mario_location(screen, info, step, env, prev_action)
+#     object = find_object_location(screen, info, step, env, prev_action)
+
+#     if object is not None:
+#         return [object[0], object[1]]
+
+
 def make_action(screen, info, step, env, prev_action):
     mario = find_mario_location(screen, info, step, env, prev_action)
     object = find_object_location(screen, info, step, env, prev_action)
@@ -316,29 +329,19 @@ def make_action(screen, info, step, env, prev_action):
 
     if object is None:
         action = 3
-    else:
-        if object[0].lower() == "pipe":
-            action = jump_pipe(mario, object[1])
-        elif object[0].lower() == "enemy":
-            action = jump_enemy(mario, object[1])
-        elif object[0].lower() == "hole":
-            action = jump_hole(mario, object[1])
+    elif object[0].lower() == "pipe":
+        action = jump_pipe(mario, object[1])
+        # print(abs(mario[0] - object[1][0]))
+    elif object[0].lower() == "enemy":
+        action = jump_enemy(mario, object[1])
+        # print(abs(mario[0] - object[1][0]))
+    # elif object[0].lower() == "hole":
+    #     action = jump_enemy(mario, object[1])
+    #     print(abs(mario[0] - object[1][0]))
 
-        # print("distance:", abs(mario[0] - object[1][0]))
-
-    # print("action:", action)
+    # print(action)
     # print("mario:", mario)
     # print("object:", object)
-    return action
-
-def jump_hole(mario_location, hole_location):
-    distance = hole_location[0] - mario_location[0]
-    action = 3
-
-    if distance > 0:
-        if distance <= 150:
-            action = 2
-
     return action
 
 
@@ -381,6 +384,24 @@ def is_on_pipe(mario_location, pipe_location):
     pipe_y = pipe_location[1]
 
     return mario_y < pipe_y
+
+
+# env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
+# env = JoypadSpace(env, SIMPLE_MOVEMENT)
+
+# obs = None
+# done = True
+# env.reset()
+# for step in range(100000):
+#     action = env.action_space.sample()
+#     obs, reward, terminated, truncated, info = env.step(action)
+#     done = terminated or truncated
+#     if done:
+#         env.reset()
+
+#     print(make_action(obs, info, step, env, action))
+# env.close()
+
 
 env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
