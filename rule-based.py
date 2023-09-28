@@ -210,21 +210,20 @@ def find_mario_location(screen, info, step, env, prev_action):
 
     return mario_position
 
-def detect_hole(screen):
+def detect_objects(screen, object_image):
     obs = cv.cvtColor(screen, cv.COLOR_BGR2RGB)
     cv.imwrite("Images/screen.jpeg", obs)
     obs = cv.imread("Images/screen.jpeg", cv.IMREAD_COLOR)
-    hole = cv.imread("Images/hole2.jpeg", cv.IMREAD_COLOR)
+    hole = cv.imread(object_image, cv.IMREAD_COLOR)
 
     result = cv.matchTemplate(obs, hole, cv.TM_CCOEFF_NORMED)
 
     w = hole.shape[1]
     h = hole.shape[0]
 
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
     yloc, xloc = np.where(result >= 0.8)
-
     rectangles = []
+
     for (x, y) in zip(xloc, yloc):
         rectangles.append([int(x), int(y), int(w), int(h)])
         rectangles.append([int(x), int(y), int(w), int(h)])
@@ -233,52 +232,16 @@ def detect_hole(screen):
 
     return rectangles
 
-def detect_first_stair(screen):
-    obs = cv.cvtColor(screen, cv.COLOR_BGR2RGB)
-    cv.imwrite("Images/screen.jpeg", obs)
-    obs = cv.imread("Images/screen.jpeg", cv.IMREAD_COLOR)
-    left_stair = cv.imread("Images/left_stair1.jpeg", cv.IMREAD_COLOR)
+def get_object_locations(screen, object_image):
+    object_locations = detect_objects(screen, object_image)
+    object_position = None
 
-    result = cv.matchTemplate(obs, left_stair, cv.TM_CCOEFF_NORMED)
+    if len(object_locations) > 0:
+        object_position_x = object_locations[-1][0]
+        object_position_y = object_locations[-1][1]
+        object_position = (object_position_x, object_position_y)
 
-    w = left_stair.shape[1]
-    h = left_stair.shape[0]
-
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-    yloc, xloc = np.where(result >= 0.8)
-
-    rectangles = []
-    for (x, y) in zip(xloc, yloc):
-        rectangles.append([int(x), int(y), int(w), int(h)])
-        rectangles.append([int(x), int(y), int(w), int(h)])
-
-    rectangles, weights = cv.groupRectangles(rectangles, 1, 0.2)
-
-    return rectangles
-
-def detect_second_stair(screen):
-    obs = cv.cvtColor(screen, cv.COLOR_BGR2RGB)
-    cv.imwrite("Images/screen.jpeg", obs)
-    obs = cv.imread("Images/screen.jpeg", cv.IMREAD_COLOR)
-    left_stair = cv.imread("Images/left_stair2.jpeg", cv.IMREAD_COLOR)
-
-    result = cv.matchTemplate(obs, left_stair, cv.TM_CCOEFF_NORMED)
-
-    w = left_stair.shape[1]
-    h = left_stair.shape[0]
-
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-    yloc, xloc = np.where(result >= 0.8)
-
-    rectangles = []
-    for (x, y) in zip(xloc, yloc):
-        rectangles.append([int(x), int(y), int(w), int(h)])
-        rectangles.append([int(x), int(y), int(w), int(h)])
-
-    rectangles, weights = cv.groupRectangles(rectangles, 1, 0.2)
-
-    return rectangles
-
+    return object_position
 
 def find_object_location(screen, info, step, env, prev_action):
     mario_status = info["status"]
@@ -299,26 +262,9 @@ def find_object_location(screen, info, step, env, prev_action):
     if len(pipe_locations) > 0:
         pipe_position = pipe_locations[0][0]
 
-    hole_locations = detect_hole(screen)
-    hole_position = None
-    if len(hole_locations) > 0:
-        hole_position_x = hole_locations[-1][0]
-        hole_position_y = hole_locations[-1][1]
-        hole_position = (hole_position_x, hole_position_y)
-
-    first_stair_locations = detect_first_stair(screen)
-    first_stair_position = None
-    if len(first_stair_locations) > 0:
-        first_stair_position_x = first_stair_locations[-1][0]
-        first_stair_position_y = first_stair_locations[-1][1]
-        first_stair_position = (first_stair_position_x, first_stair_position_y)
-
-    second_stair_locations = detect_second_stair(screen)
-    second_stair_position = None
-    if len(second_stair_locations) > 0:
-        second_stair_position_x = second_stair_locations[-1][0]
-        second_stair_position_y = second_stair_locations[-1][1]
-        second_stair_position = (second_stair_position_x, second_stair_position_y)
+    hole_position = get_object_locations(screen, "Images/hole2.jpeg")
+    first_stair_position = get_object_locations(screen, "Images/left_stair1.jpeg")
+    second_stair_position = get_object_locations(screen, "Images/left_stair2.jpeg")
 
     next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_stair_position, second_stair_position)
 
@@ -415,7 +361,7 @@ def jump_enemy(mario_location, enemy_location):
 
     if distance > 0 and not is_below_enemy(mario_location, enemy_location):
         if distance <= 32:
-            action = 2
+            action = 4
 
             if distance <= 24 and not is_above_enemy(mario_location, enemy_location):
                 action = 6
@@ -427,7 +373,7 @@ def jump_hole(mario_location, hole_location):
     action = 3
 
     if distance > 0:
-        if distance <= 40:
+        if distance <= 30:
             action = 2
 
     return action
@@ -440,9 +386,9 @@ def jump_first_stair(mario_location, first_stair_location):
         if distance <= 40:
             action = 4
     else:
-        if action == 3 and is_on_stair(mario_location, first_stair_location):
-            action = 2
-
+        if is_on_stair(mario_location, first_stair_location):
+            action == 0
+            
     return action
 
 def jump_second_stair(mario_location, second_stair_location):
@@ -459,7 +405,7 @@ def is_on_pipe(mario_location, pipe_location):
     return mario_location[1] < pipe_location[1]
 
 def is_above_enemy(mario_location, enemy_location):
-    return mario_location[1] < enemy_location[1]
+    return mario_location[1] + 25 < enemy_location[1]
 
 def is_below_enemy(mario_location, enemy_location):
     return mario_location[1] > enemy_location[1] + 25
