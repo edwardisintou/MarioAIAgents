@@ -223,7 +223,6 @@ def detect_hole(screen):
 
     min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
     yloc, xloc = np.where(result >= 0.8)
-    # print("x:", xloc, "y:", yloc)
 
     rectangles = []
     for (x, y) in zip(xloc, yloc):
@@ -232,7 +231,30 @@ def detect_hole(screen):
 
     rectangles, weights = cv.groupRectangles(rectangles, 1, 0.2)
 
-    # print("rectangles:", rectangles)
+    return rectangles
+
+def detect_stairs(screen):
+    obs = cv.cvtColor(screen, cv.COLOR_BGR2RGB)
+    cv.imwrite("Images/screen.jpeg", obs)
+    obs = cv.imread("Images/screen.jpeg", cv.IMREAD_COLOR)
+    left_stair = cv.imread("Images/left_stair.jpeg", cv.IMREAD_COLOR)
+
+    result = cv.matchTemplate(obs, left_stair, cv.TM_CCOEFF_NORMED)
+
+    w = left_stair.shape[1]
+    h = left_stair.shape[0]
+
+    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
+    yloc, xloc = np.where(result >= 0.9)
+
+    rectangles = []
+    for (x, y) in zip(xloc, yloc):
+        rectangles.append([int(x), int(y), int(w), int(h)])
+        rectangles.append([int(x), int(y), int(w), int(h)])
+
+    rectangles, weights = cv.groupRectangles(rectangles, 1, 0.2)
+    print("rectangles:", rectangles)
+
     return rectangles
 
 def find_object_location(screen, info, step, env, prev_action):
@@ -260,9 +282,15 @@ def find_object_location(screen, info, step, env, prev_action):
         hole_position_x = hole_locations[-1][0]
         hole_position_y = hole_locations[-1][1]
         hole_position = (hole_position_x, hole_position_y)
-        print("hole:", hole_position)
 
-    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position)
+    left_stair_locations = detect_stairs(screen)
+    left_stair_position = None
+    if len(left_stair_locations) > 0:
+        left_stair_position_x = left_stair_locations[-1][0]
+        left_stair_position_y = left_stair_locations[-1][1]
+        left_stair_position = (left_stair_position_x, left_stair_position_y)
+
+    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position, left_stair_position)
 
     if enemy_position == next_object:
         return ["enemy", enemy_position]
@@ -270,15 +298,17 @@ def find_object_location(screen, info, step, env, prev_action):
         return ["pipe", pipe_position]
     elif hole_position == next_object:
         return ["hole", hole_position]
+    elif left_stair_position == next_object:
+        return ["left stair", hole_position]
     else:
         return None
 
 
-def nearest_object(mario_position, enemy_position, pipe_position, hole_position):
+def nearest_object(mario_position, enemy_position, pipe_position, hole_position, left_stair_position):
     objects = []
     locations = []
 
-    for object in enemy_position, pipe_position, hole_position:
+    for object in enemy_position, pipe_position, hole_position, left_stair_position:
         if object is not None:
             objects.append(object)
             location = object[0] - mario_position[0]
@@ -308,19 +338,17 @@ def make_action(screen, info, step, env, prev_action):
 
     if object is None:
         action = 3
-    elif object[0].lower() == "pipe":
-        action = jump_pipe(mario, object[1])
-        print(abs(mario[0] - object[1][0]))
-    elif object[0].lower() == "enemy":
-        action = jump_enemy(mario, object[1])
-        print(abs(mario[0] - object[1][0]))
-    elif object[0].lower() == "hole":
-        action = jump_hole(mario, object[1])
-        print(abs(mario[0] - object[1][0]))
+    else:
+        if object[0].lower() == "pipe":
+            action = jump_pipe(mario, object[1])
+        elif object[0].lower() == "enemy":
+            action = jump_enemy(mario, object[1])
+        elif object[0].lower() == "hole":
+            action = jump_hole(mario, object[1])
 
-    print("action:", action)
-    print("mario:", mario)
-    print("object:", object)
+    # print("action:", action)
+    # print("mario:", mario)
+    # print("object:", object)
     return action
 
 
@@ -332,7 +360,7 @@ def jump_pipe(mario_location, pipe_location):
         if is_on_pipe(mario_location, pipe_location):
             action = 2
 
-        elif distance <= 58:
+        elif distance <= 60:
             action = 2
 
             if distance <= 20:
@@ -353,7 +381,7 @@ def jump_enemy(mario_location, enemy_location):
         if distance <= 40:
             action = 2
 
-            if distance <= 20:
+            if distance <= 20 and not is_above_enemy(mario_location, enemy_location):
                 action = 6
 
     return action
@@ -371,26 +399,17 @@ def jump_hole(mario_location, hole_location):
 def is_on_pipe(mario_location, pipe_location):
     mario_location[1] > pipe_location[1]
 
+def is_above_enemy(mario_location, enemy_location):
+    return mario_location[1] < enemy_location[1]
+
 def is_below_enemy(mario_location, enemy_location):
-    return mario_location[1] > enemy_location[1]
+    return mario_location[1] > enemy_location[1] + 25
 
+def is_on_pipe(mario_location, pipe_location):
+    mario_y = mario_location[1]
+    pipe_y = pipe_location[1]
 
-# env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
-# env = JoypadSpace(env, SIMPLE_MOVEMENT)
-
-# obs = None
-# done = True
-# env.reset()
-# for step in range(100000):
-#     action = env.action_space.sample()
-#     obs, reward, terminated, truncated, info = env.step(action)
-#     done = terminated or truncated
-#     if done:
-#         env.reset()
-
-#     print(make_action(obs, info, step, env, action))
-# env.close()
-
+    return mario_y < pipe_y
 
 env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
 env = JoypadSpace(env, SIMPLE_MOVEMENT)

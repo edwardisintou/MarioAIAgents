@@ -298,7 +298,7 @@ def find_object_location(screen, info, step, env, prev_action):
     elif hole_position == next_object:
         return ["hole", hole_position]
     elif left_stair_position == next_object:
-        return ["left stair", hole_position]
+        return ["left stair", left_stair_position]
     else:
         return None
 
@@ -344,6 +344,8 @@ def make_action(screen, info, step, env, prev_action):
             action = jump_enemy(mario, object[1])
         elif object[0].lower() == "hole":
             action = jump_hole(mario, object[1])
+        elif object[0].lower() == "left stair":
+            action = jump_stair(mario, object[1])
 
     print("action:", action)
     print("mario:", mario)
@@ -377,7 +379,7 @@ def jump_enemy(mario_location, enemy_location):
     action = 3
 
     if distance > 0 and not is_below_enemy(mario_location, enemy_location):
-        if distance <= 40:
+        if distance <= 30:
             action = 2
 
             if distance <= 20 and not is_above_enemy(mario_location, enemy_location):
@@ -395,8 +397,21 @@ def jump_hole(mario_location, hole_location):
 
     return action
 
+def jump_stair(mario_location, stair_location):
+    distance = stair_location[0] - mario_location[0]
+    action = 3
+
+    if distance > 0:
+        if distance <= 60:
+            action = 4
+    else:
+        if action == 3 and is_on_stair(mario_location, stair_location):
+            action = 2
+
+    return action
+
 def is_on_pipe(mario_location, pipe_location):
-    mario_location[1] > pipe_location[1]
+    return mario_location[1] < pipe_location[1]
 
 def is_above_enemy(mario_location, enemy_location):
     return mario_location[1] < enemy_location[1]
@@ -404,11 +419,8 @@ def is_above_enemy(mario_location, enemy_location):
 def is_below_enemy(mario_location, enemy_location):
     return mario_location[1] > enemy_location[1] + 25
 
-def is_on_pipe(mario_location, pipe_location):
-    mario_y = mario_location[1]
-    pipe_y = pipe_location[1]
-
-    return mario_y < pipe_y
+def is_on_stair(mario_location, stair_location):
+    return mario_location[1] < stair_location[1]
 
 env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
