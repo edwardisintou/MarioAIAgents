@@ -333,7 +333,6 @@ def make_action(screen, info, step, env, prev_action):
     print("object:", object)
     return action
 
-
 def jump_pipe(mario_location, pipe_location):
     distance = pipe_location[0] - mario_location[0]
     action = 3
@@ -345,14 +344,15 @@ def jump_pipe(mario_location, pipe_location):
         elif distance <= 60:
             action = 2
 
-            if distance <= 20:
+            if distance <= 18:
                 action = 6
 
                 if distance >= 12:
-                    for i in range(50):
+                    for i in range(60):
                         action = 4
 
     return action
+
 
 def jump_enemy(mario_location, enemy_location):
     distance = enemy_location[0] - mario_location[0]
@@ -383,7 +383,11 @@ def jump_first_stair(mario_location, first_stair_location):
             action = 4
     else:
         if is_on_stair(mario_location, first_stair_location):
-            action == 0
+            for i in range(40):
+                if i < 10:
+                    action = 0
+                else:
+                    action = 2
             
     return action
 
