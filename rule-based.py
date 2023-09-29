@@ -263,10 +263,11 @@ def find_object_location(screen, info, step, env, prev_action):
         pipe_position = pipe_locations[0][0]
 
     hole_position = get_object_locations(screen, "Images/hole2.jpeg")
-    first_stair_position = get_object_locations(screen, "Images/left_stair1.jpeg")
+    first_left_stair = get_object_locations(screen, "Images/left_stair1.jpeg")
+    first_right_stair = get_object_locations(screen, "Images/right_stair1.jpeg")
     second_stair_position = get_object_locations(screen, "Images/left_stair2.jpeg")
 
-    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_stair_position, second_stair_position)
+    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_position)
 
     if enemy_position == next_object:
         return ["enemy", enemy_position]
@@ -274,19 +275,21 @@ def find_object_location(screen, info, step, env, prev_action):
         return ["pipe", pipe_position]
     elif hole_position == next_object:
         return ["hole", hole_position]
-    elif first_stair_position == next_object:
-        return ["first stair", first_stair_position]
+    elif first_left_stair == next_object:
+        return ["first left stair", first_left_stair]
+    elif first_right_stair == next_object:
+        return ["first right stair", first_right_stair]
     elif second_stair_position == next_object:
         return ["second stair", second_stair_position]
     else:
         return None
 
 
-def nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_stair_position, second_stair_location):
+def nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_location):
     objects = []
     locations = []
 
-    for object in enemy_position, pipe_position, hole_position, first_stair_position, second_stair_location:
+    for object in enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_location:
         if object is not None:
             objects.append(object)
             location = object[0] - mario_position[0]
@@ -323,8 +326,10 @@ def make_action(screen, info, step, env, prev_action):
             action = jump_enemy(mario, object[1])
         elif object[0].lower() == "hole":
             action = jump_hole(mario, object[1])
-        elif object[0].lower() == "first stair":
-            action = jump_first_stair(mario, object[1])
+        elif object[0].lower() == "first left stair":
+            action = jump_first_left_stair(mario, object[1])
+        elif object[0].lower() == "first right stair":
+            action = jump_first_right_stair(mario, object[1])
         elif object[0].lower() == "second stair":
             action = jump_second_stair(mario, object[1])
 
@@ -374,21 +379,30 @@ def jump_hole(mario_location, hole_location):
 
     return action
 
-def jump_first_stair(mario_location, first_stair_location):
-    distance = first_stair_location[0] - mario_location[0]
+def jump_first_left_stair(mario_location, first_left_stair_location):
+    distance = first_left_stair_location[0] - mario_location[0]
     action = 3
 
     if distance > 0:
         if distance <= 40:
             action = 4
     else:
-        if is_on_stair(mario_location, first_stair_location):
-            for i in range(40):
-                if i < 10:
-                    action = 0
-                else:
-                    action = 2
-            
+        if is_on_stair(mario_location, first_left_stair_location):
+            action = 2
+
+    return action
+
+def jump_first_right_stair(mario_location, first_right_stair_location):
+    distance = first_right_stair_location[0] - mario_location[0]
+    action = 3
+
+    if distance > 0:
+        if distance <= 60:
+            action = 4
+    
+            if action >= 40:
+                action = 6
+
     return action
 
 def jump_second_stair(mario_location, second_stair_location):
@@ -397,6 +411,12 @@ def jump_second_stair(mario_location, second_stair_location):
 
     if distance > 0:
         if distance <= 40:
+            action = 4
+
+            if distance <= 10:
+                action = 6
+    else:
+        if is_on_stair(mario_location, second_stair_location):
             action = 2
 
     return action
