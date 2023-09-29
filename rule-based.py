@@ -348,23 +348,19 @@ def jump_pipe(mario_location, pipe_location):
             if distance <= 20:
                 action = 6
 
-                if distance >= 15:
-                    for i in range(40):
+                if distance >= 12:
+                    for i in range(50):
                         action = 4
 
     return action
-
 
 def jump_enemy(mario_location, enemy_location):
     distance = enemy_location[0] - mario_location[0]
     action = 3
 
     if distance > 0 and not is_below_enemy(mario_location, enemy_location):
-        if distance <= 32:
-            action = 4
-
-            if distance <= 24 and not is_above_enemy(mario_location, enemy_location):
-                action = 6
+        if distance <= 36:
+            action = 2
 
     return action
 
@@ -373,7 +369,7 @@ def jump_hole(mario_location, hole_location):
     action = 3
 
     if distance > 0:
-        if distance <= 30:
+        if distance <= 40:
             action = 2
 
     return action
@@ -403,9 +399,6 @@ def jump_second_stair(mario_location, second_stair_location):
 
 def is_on_pipe(mario_location, pipe_location):
     return mario_location[1] < pipe_location[1]
-
-def is_above_enemy(mario_location, enemy_location):
-    return mario_location[1] + 25 < enemy_location[1]
 
 def is_below_enemy(mario_location, enemy_location):
     return mario_location[1] > enemy_location[1] + 25
