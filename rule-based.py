@@ -421,15 +421,24 @@ def jump_second_stair(mario_location, second_stair_location):
     distance = second_stair_location[0] - mario_location[0]
     action = 3
 
-    if distance <= 20:
-        if is_on_ground(mario_location):
-            action = 6
+    if distance >= 50:
+        action = 3
+        
+        if distance <= 30:
+            action = 4
 
-        if distance >= 45:
-            action = 3
+    elif is_on_ground(mario_location):
+        action = 6
 
-            if distance <= 35:
-                action = 4
+    # if distance <= 50:
+    #     if distance >= 40:
+    #         action = 3
+
+    #         if distance <= 30:
+    #             action = 4
+
+    #     elif is_on_ground(mario_location):
+    #         action = 6
 
     # if distance > 0:
     #     if distance >= 40 and distance <= 80:
