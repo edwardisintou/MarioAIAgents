@@ -364,7 +364,7 @@ def jump_enemy(mario_location, enemy_location):
     action = 3
 
     if distance > 0 and not is_below_enemy(mario_location, enemy_location):
-        if distance <= 36:
+        if distance <= 30:
             action = 2
 
     return action
@@ -384,8 +384,14 @@ def jump_first_left_stair(mario_location, first_left_stair_location):
     action = 3
 
     if distance > 0:
-        if distance <= 40:
+        if distance <= 60:
             action = 4
+
+        if distance <= 30 and is_on_ground(mario_location):
+            action = 6
+
+            # if distance >= 45:
+            #     action = 2
     else:
         if is_on_stair(mario_location, first_left_stair_location):
             action = 2
@@ -400,8 +406,11 @@ def jump_first_right_stair(mario_location, first_right_stair_location):
         if distance <= 60:
             action = 4
     
-            if action >= 40:
+            if distance <= 30 and is_on_ground(mario_location):
                 action = 6
+
+                if distance >= 45:
+                    action = 2
 
     return action
 
@@ -409,12 +418,14 @@ def jump_second_stair(mario_location, second_stair_location):
     distance = second_stair_location[0] - mario_location[0]
     action = 3
 
-    if distance > 0:
-        if distance <= 40:
-            action = 4
+    if distance <= 50:
+            action = 2
 
-            if distance <= 10:
+            if distance <= 30 and is_on_ground(mario_location):
                 action = 6
+
+                # if distance >= 45:
+                #     action = 2
     else:
         if is_on_stair(mario_location, second_stair_location):
             action = 2
@@ -429,6 +440,9 @@ def is_below_enemy(mario_location, enemy_location):
 
 def is_on_stair(mario_location, stair_location):
     return mario_location[1] < stair_location[1]
+
+def is_on_ground(mario_location):
+    return mario_location[1] >= 190
 
 env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
