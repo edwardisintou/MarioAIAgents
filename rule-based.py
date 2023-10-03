@@ -384,7 +384,7 @@ def jump_first_left_stair(mario_location, first_left_stair_location):
     action = 3
 
     if distance > 0:
-        if distance <= 60:
+        if distance <= 50:
             action = 4
 
         if distance <= 30 and is_on_ground(mario_location):
@@ -411,6 +411,9 @@ def jump_first_right_stair(mario_location, first_right_stair_location):
 
                 if distance >= 45:
                     action = 2
+    else:
+        if is_on_stair(mario_location, first_right_stair_location):
+            action = 2
 
     return action
 
@@ -418,17 +421,46 @@ def jump_second_stair(mario_location, second_stair_location):
     distance = second_stair_location[0] - mario_location[0]
     action = 3
 
-    if distance <= 50:
-            action = 2
+    if distance <= 20:
+        if is_on_ground(mario_location):
+            action = 6
 
-            if distance <= 30 and is_on_ground(mario_location):
-                action = 6
+        if distance >= 45:
+            action = 3
 
-                # if distance >= 45:
-                #     action = 2
-    else:
-        if is_on_stair(mario_location, second_stair_location):
-            action = 2
+            if distance <= 35:
+                action = 4
+
+    # if distance > 0:
+    #     if distance >= 40 and distance <= 80:
+    #         action = 0
+        #     action = 2
+    
+        # elif distance <= 20 and is_on_ground(mario_location):
+        #     action = 6
+
+        # if distance >= 35:
+        #     action = 2
+    # else:
+    #     if is_on_stair(mario_location, second_stair_location):
+    #         action = 4
+
+    # distance = second_stair_location[0] - mario_location[0]
+    # action = 3
+
+    # if distance > 0:
+    #     if distance <= 50:
+    #         action = 4
+
+    #     if distance <= 25:
+    #         if is_on_ground(mario_location):
+    #             action = 6
+
+    #             if distance >= 40:
+    #                 action = 4
+    # else:
+    #     if is_on_stair(mario_location, second_stair_location):
+    #         action = 2
 
     return action
 
