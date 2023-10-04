@@ -266,8 +266,12 @@ def find_object_location(screen, info, step, env, prev_action):
     first_left_stair = get_object_locations(screen, "Images/left_stair1.jpeg")
     first_right_stair = get_object_locations(screen, "Images/right_stair1.jpeg")
     second_stair_position = get_object_locations(screen, "Images/stair3.jpeg")
+    last_stair_position = get_object_locations(screen, "Images/last.jpeg")
 
-    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_position)
+    if last_stair_position is None:
+        last_stair_position = get_object_locations(screen, "Images/last2.jpeg")
+
+    next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_position, last_stair_position)
 
     if enemy_position == next_object:
         return ["enemy", enemy_position]
@@ -281,15 +285,17 @@ def find_object_location(screen, info, step, env, prev_action):
         return ["first right stair", first_right_stair]
     elif second_stair_position == next_object:
         return ["second stair", second_stair_position]
+    elif last_stair_position == next_object:
+        return ["last stair", last_stair_position]
     else:
         return None
 
 
-def nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_location):
+def nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_location, last_stair_location):
     objects = []
     locations = []
 
-    for object in enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_location:
+    for object in enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_location, last_stair_location:
         if object is not None:
             objects.append(object)
             location = object[0] - mario_position[0]
@@ -332,6 +338,8 @@ def make_action(screen, info, step, env, prev_action):
             action = jump_first_right_stair(mario, object[1])
         elif object[0].lower() == "second stair":
             action = jump_second_stair(mario, object[1])
+        elif object[0].lower() == "last stair":
+            action = jump_last_stair(mario, object[1])
 
     print("action:", action)
     print("mario:", mario)
@@ -405,11 +413,24 @@ def jump_first_right_stair(mario_location, first_right_stair_location):
 
                 if distance >= 45:
                     action = 2
-                    
+
     return action
 
 def jump_second_stair(mario_location, second_stair_location):
     distance = second_stair_location[0] - mario_location[0]
+    action = 3
+
+    if distance > 0:
+        if distance <= 60:
+            action = 4
+
+            if distance <= 25:
+                action = 0
+
+    return action
+
+def jump_last_stair(mario_location, last_stair_location):
+    distance = last_stair_location[0] - mario_location[0]
     action = 3
 
     if distance > 0:
