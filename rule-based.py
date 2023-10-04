@@ -265,7 +265,7 @@ def find_object_location(screen, info, step, env, prev_action):
     hole_position = get_object_locations(screen, "Images/hole2.jpeg")
     first_left_stair = get_object_locations(screen, "Images/left_stair1.jpeg")
     first_right_stair = get_object_locations(screen, "Images/right_stair1.jpeg")
-    second_stair_position = get_object_locations(screen, "Images/left_stair2.jpeg")
+    second_stair_position = get_object_locations(screen, "Images/stair3.jpeg")
 
     next_object = nearest_object(mario_position, enemy_position, pipe_position, hole_position, first_left_stair, first_right_stair, second_stair_position)
 
@@ -390,12 +390,6 @@ def jump_first_left_stair(mario_location, first_left_stair_location):
         if distance <= 30 and is_on_ground(mario_location):
             action = 6
 
-            # if distance >= 45:
-            #     action = 2
-    else:
-        if is_on_stair(mario_location, first_left_stair_location):
-            action = 2
-
     return action
 
 def jump_first_right_stair(mario_location, first_right_stair_location):
@@ -411,62 +405,19 @@ def jump_first_right_stair(mario_location, first_right_stair_location):
 
                 if distance >= 45:
                     action = 2
-    else:
-        if is_on_stair(mario_location, first_right_stair_location):
-            action = 2
-
+                    
     return action
 
 def jump_second_stair(mario_location, second_stair_location):
     distance = second_stair_location[0] - mario_location[0]
-    action = 4
+    action = 3
 
-    if distance >= 50:
-        action = 3
+    if distance > 0:
+        if distance <= 60:
+            action = 4
 
-    elif is_on_ground(mario_location) or is_on_stair(mario_location, second_stair_location):
-        action = 6
-
-    # if distance <= 50:
-    #     if distance >= 40:
-    #         action = 3
-
-    #         if distance <= 30:
-    #             action = 4
-
-    #     elif is_on_ground(mario_location):
-    #         action = 6
-
-    # if distance > 0:
-    #     if distance >= 40 and distance <= 80:
-    #         action = 0
-        #     action = 2
-    
-        # elif distance <= 20 and is_on_ground(mario_location):
-        #     action = 6
-
-        # if distance >= 35:
-        #     action = 2
-    # else:
-    #     if is_on_stair(mario_location, second_stair_location):
-    #         action = 4
-
-    # distance = second_stair_location[0] - mario_location[0]
-    # action = 3
-
-    # if distance > 0:
-    #     if distance <= 50:
-    #         action = 4
-
-    #     if distance <= 25:
-    #         if is_on_ground(mario_location):
-    #             action = 6
-
-    #             if distance >= 40:
-    #                 action = 4
-    # else:
-    #     if is_on_stair(mario_location, second_stair_location):
-    #         action = 2
+            if distance <= 25:
+                action = 0
 
     return action
 
