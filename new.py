@@ -330,15 +330,17 @@ def make_action(screen, info, step, env, prev_action):
 
     action = 3
 
+    pipe = False
+    enemy = False
     last_stair = False
 
     if object is None:
         action = 3
     else:
         if object[0].lower() == "pipe":
-            action = jump_pipe(mario, object[1])
+            pipe = True
         elif object[0].lower() == "enemy":
-            action = jump_enemy(mario, object[1])
+            enemy = True
         elif object[0].lower() == "hole":
             action = jump_hole(mario, object[1])
         elif object[0].lower() == "first left stair":
@@ -355,38 +357,30 @@ def make_action(screen, info, step, env, prev_action):
     print("action:", action)
     print("mario:", mario)
     print("object:", object)
-    return action, last_stair
+    return action, enemy, pipe, last_stair
 
-def jump_pipe(mario_location, pipe_location):
-    distance = pipe_location[0] - mario_location[0]
-    action = 3
+def jump_pipe(env):
+    for _ in range(3):
+        for _ in range(15):
+            env.step(2)
+        for _ in range(10):
+            env.step(0)
+    
+    obs, reward, terminated, truncated, info = env.step(0)
 
-    if distance > 0:
-        if is_on_pipe(mario_location, pipe_location):
-            action = 2
-
-        elif distance <= 60:
-            action = 2
-
-            if distance <= 18:
-                action = 6
-
-                if distance >= 12:
-                    for i in range(60):
-                        action = 4
-
-    return action
+    return obs, reward, terminated, truncated, info
 
 
-def jump_enemy(mario_location, enemy_location):
-    distance = enemy_location[0] - mario_location[0]
-    action = 3
+def jump_enemy(env):
+    # for _ in range(2):
+    for _ in range(10):
+        env.step(2)
+    for _ in range(5):
+        env.step(0)
+    
+    obs, reward, terminated, truncated, info = env.step(0)
 
-    if distance > 0 and not is_below_enemy(mario_location, enemy_location):
-        if distance <= 30:
-            action = 2
-
-    return action
+    return obs, reward, terminated, truncated, info
 
 def jump_hole(mario_location, hole_location):
     distance = hole_location[0] - mario_location[0]
@@ -486,13 +480,19 @@ obs = None
 done = True
 env.reset()
 for step in range(100000):
+    pipe = False
+    enemy = False
     last_stair = False
     if obs is not None:
-        action, last_stair = make_action(obs, info, step, env, action)
+        action, enemy, pipe, last_stair = make_action(obs, info, step, env, action)
     else:
         action = env.action_space.sample()
     
-    if last_stair:
+    if pipe:
+        obs, reward, terminated, truncated, info = jump_pipe(env)
+    elif enemy:
+        obs, reward, terminated, truncated, info = jump_enemy(env)
+    elif last_stair:
         obs, reward, terminated, truncated, info = jump_last_stair(env)
     else:
         obs, reward, terminated, truncated, info = env.step(action)

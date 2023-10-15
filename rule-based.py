@@ -5,6 +5,7 @@ import cv2 as cv
 import numpy as np
 import string
 import time
+import matplotlib.pyplot as plt
 
 PRINT_GRID = True
 PRINT_LOCATIONS = False
@@ -352,9 +353,9 @@ def make_action(screen, info, step, env, prev_action):
         elif object[0].lower() == "goal":
             action = jump_goal(mario, object[1])
 
-    print("action:", action)
-    print("mario:", mario)
-    print("object:", object)
+    # print("action:", action)
+    # print("mario:", mario)
+    # print("object:", object)
     return action, last_stair
 
 def jump_pipe(mario_location, pipe_location):
@@ -438,12 +439,15 @@ def jump_second_stair(mario_location, second_stair_location):
             if distance <= 25:
                 action = 0
 
+                if distance <= 10:
+                    action = 3
+
     return action
 
 def jump_last_stair(env):
     for _ in range(10):
         env.step(0)
-    for _ in range(4):
+    for _ in range(5):
         for _ in range(15):
             env.step(2)
         for _ in range(10):
@@ -479,12 +483,33 @@ def is_on_stair(mario_location, stair_location):
 def is_on_ground(mario_location):
     return mario_location[1] >= 190
 
+def plot_reward_chart(actions, rewards):
+    plt.plot(actions, rewards)
+    plt.xlabel('Number of Actions')
+    plt.ylabel('Total Reward')
+    plt.title("Reward Over Actions")
+    plt.show()
+
+
 env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
 
 obs = None
 done = True
 env.reset()
+
+number_of_acts = 0
+number_of_dies = 0
+number_of_resets = 0
+time_list = []
+distance_list = []
+total_life = []
+
+total_reward = 0
+reward_list = []
+action_list = []
+
+start = time.time()
 for step in range(100000):
     last_stair = False
     if obs is not None:
@@ -497,7 +522,34 @@ for step in range(100000):
     else:
         obs, reward, terminated, truncated, info = env.step(action)
 
+    number_of_acts += 1
+    time_list.append(info["time"])
+    distance_list.append(info["x_pos"])
+    total_life.append(info["life"])
+
+    total_reward += reward
+    reward_list.append(total_reward)
+    action_list.append(number_of_acts)
+
     done = terminated or truncated
     if done:
         env.reset()
+        number_of_resets += 1
+
+    if len(total_life) >= 2 and total_life[-1] != total_life[-2]:
+        number_of_dies += 1
+
+    if info["stage"] != 1:
+        print("real time:", time.time() - start)
+        print("mario time:", time_list[-2])
+        print("furthest position:", distance_list[-2])
+        print("total actions:", number_of_acts)
+        print("total dies:", number_of_dies)
+        print("total reset:", number_of_resets)
+        print("life left:", info["life"])
+        print("total score:", info["score"])
+
+        plot_reward_chart(action_list, reward_list)
+        break
+
 env.close()
