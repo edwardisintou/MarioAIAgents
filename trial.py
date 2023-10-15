@@ -510,10 +510,9 @@ class Heatmap:
 env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
 
+obs = None
 done = True
 env.reset()
-action = 0
-obs, reward, terminated, truncated, info = env.step(action)
 
 number_of_acts = 0
 number_of_dies = 0
@@ -534,7 +533,7 @@ for step in range(100000):
     if obs is not None:
         action, last_stair = make_action(obs, info, step, env, action)
     else:
-        action = env.action_space.sample()
+        action = 3
     
     if last_stair:
         obs, reward, terminated, truncated, info = jump_last_stair(env)
@@ -542,8 +541,7 @@ for step in range(100000):
         obs, reward, terminated, truncated, info = env.step(action)
 
     mario_location = find_mario_location(obs, info, step, env, action)
-    print(mario_location[0], mario_location[1])
-    # heatmap.update_heatmap(mario_location[0], mario_location[1])
+    heatmap.update_heatmap(mario_location[0], mario_location[1])
 
     number_of_acts += 1
     time_list.append(info["time"])
@@ -561,8 +559,6 @@ for step in range(100000):
 
     if len(total_life) >= 2 and total_life[-1] != total_life[-2]:
         number_of_dies += 1
-
-    print(np.sum(obs, axis=-1).shape)
 
     if info["stage"] != 1:
         print("real time:", time.time() - start)
