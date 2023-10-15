@@ -491,12 +491,29 @@ def plot_reward_chart(actions, rewards):
     plt.show()
 
 
+class Heatmap:
+    def __init__(self, obs_width, obs_height):
+        self.heatmap = np.zeros((obs_width, obs_height), dtype=int)
+
+    def update_heatmap(self, x_mario, y_mario):
+        self.heatmap[x_mario][y_mario] += 1
+
+    def plot_heatmap(self):
+        plt.figure(figsize=(8, 6))
+        plt.imshow(self.heatmap, cmap='hot', origin='lower')
+        plt.colorbar(label='Intensity')
+        plt.title('Mario Heatmap')
+        plt.xlabel('X Position')
+        plt.ylabel('Y Position')
+        plt.show()
+
 env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
 env = JoypadSpace(env, SIMPLE_MOVEMENT)
 
-obs = None
 done = True
 env.reset()
+action = 0
+obs, reward, terminated, truncated, info = env.step(action)
 
 number_of_acts = 0
 number_of_dies = 0
@@ -509,6 +526,8 @@ total_reward = 0
 reward_list = []
 action_list = []
 
+
+heatmap = Heatmap(240, 256)
 start = time.time()
 for step in range(100000):
     last_stair = False
@@ -521,6 +540,10 @@ for step in range(100000):
         obs, reward, terminated, truncated, info = jump_last_stair(env)
     else:
         obs, reward, terminated, truncated, info = env.step(action)
+
+    mario_location = find_mario_location(obs, info, step, env, action)
+    print(mario_location[0], mario_location[1])
+    # heatmap.update_heatmap(mario_location[0], mario_location[1])
 
     number_of_acts += 1
     time_list.append(info["time"])
@@ -539,6 +562,8 @@ for step in range(100000):
     if len(total_life) >= 2 and total_life[-1] != total_life[-2]:
         number_of_dies += 1
 
+    print(np.sum(obs, axis=-1).shape)
+
     if info["stage"] != 1:
         print("real time:", time.time() - start)
         print("mario time:", time_list[-2])
@@ -550,6 +575,7 @@ for step in range(100000):
         print("total score:", info["score"])
 
         plot_reward_chart(action_list, reward_list)
+        heatmap.plot_heatmap()
         break
 
 env.close()
