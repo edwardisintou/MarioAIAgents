@@ -353,9 +353,9 @@ def make_action(screen, info, step, env, prev_action):
         elif object[0].lower() == "goal":
             action = jump_goal(mario, object[1])
 
-    # print("action:", action)
-    # print("mario:", mario)
-    # print("object:", object)
+    print("mario:", mario)
+    print("object:", object)
+    print("action:", action)
     return action, last_stair
 
 def jump_pipe(mario_location, pipe_location):
@@ -489,8 +489,6 @@ def plot_reward_chart(actions, rewards):
     plt.ylabel('Total Reward')
     plt.title("Reward Over Actions")
     plt.show()
-
-
 class Heatmap:
     def __init__(self, obs_width, obs_height):
         self.heatmap = np.zeros((obs_width, obs_height), dtype=int)
@@ -519,6 +517,7 @@ number_of_dies = 0
 number_of_resets = 0
 time_list = []
 distance_list = []
+distance_list2 = []
 total_life = []
 
 total_reward = 0
@@ -540,9 +539,6 @@ for step in range(100000):
     else:
         obs, reward, terminated, truncated, info = env.step(action)
 
-    mario_location = find_mario_location(obs, info, step, env, action)
-    heatmap.update_heatmap(mario_location[0], mario_location[1])
-
     number_of_acts += 1
     time_list.append(info["time"])
     distance_list.append(info["x_pos"])
@@ -557,21 +553,32 @@ for step in range(100000):
         env.reset()
         number_of_resets += 1
 
+        if number_of_resets < 3:
+            number_of_acts = 0
+            total_reward = 0
+            reward_list = []
+            action_list = []
+
     if len(total_life) >= 2 and total_life[-1] != total_life[-2]:
         number_of_dies += 1
 
-    if info["stage"] != 1:
-        print("real time:", time.time() - start)
-        print("mario time:", time_list[-2])
-        print("furthest position:", distance_list[-2])
-        print("total actions:", number_of_acts)
-        print("total dies:", number_of_dies)
-        print("total reset:", number_of_resets)
-        print("life left:", info["life"])
-        print("total score:", info["score"])
 
-        plot_reward_chart(action_list, reward_list)
-        heatmap.plot_heatmap()
-        break
+    if info["stage"] == 2:
+        distance_list2.append(info["x_pos"])
+        mario_location = find_mario_location(obs, info, step, env, action)
+        heatmap.update_heatmap(mario_location[0], mario_location[1])
+        if number_of_resets >= 3:
+            print("real time:", time.time() - start)
+            print("mario time:", time_list[-1])
+            print("furthest position:", max(distance_list2))
+            print("total actions:", number_of_acts)
+            print("total dies:", number_of_dies)
+            print("total reset:", number_of_resets)
+            print("life left:", info["life"])
+            print("total score:", info["score"])
+
+            plot_reward_chart(action_list, reward_list)
+            heatmap.plot_heatmap()
+            break
 
 env.close()
